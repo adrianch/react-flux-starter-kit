@@ -16,8 +16,7 @@ var config = {
 		html: './src/*.html',
 		js: './src/**/*.js',
 		css: [
-      		'node_modules/bootstrap/dist/css/bootstrap.min.css',
-      		'node_modules/bootstrap/dist/css/bootstrap-theme.min.css'
+      		'node_modules/bootstrap/dist/css/bootstrap.min.css'
     	],
 		dist: './dist',
 		mainJs: './src/main.js'
@@ -32,21 +31,23 @@ gulp.task('connect', function() {
 		base: config.devBaseUrl,
 		livereload: true
 	});
+	return new Promise((resolve, reject) => resolve());
 });
 
-gulp.task('open', ['connect'], function() {
+gulp.task('open', gulp.series('connect', function() {
 	gulp.src('dist/index.html')
 		.pipe(open({ uri: config.devBaseUrl + ':' + config.port + '/'}));
-});
+	return new Promise((resolve, reject) => resolve());
+}));
 
 gulp.task('html', function() {
-	gulp.src(config.paths.html)
+	return gulp.src(config.paths.html)
 		.pipe(gulp.dest(config.paths.dist))
 		.pipe(connect.reload());
 });
 
 gulp.task('js', function() {
-	browserify(config.paths.mainJs)
+	return browserify(config.paths.mainJs)
 		.transform(reactify)
 		.bundle()
 		.on('error', console.error.bind(console))
@@ -56,7 +57,7 @@ gulp.task('js', function() {
 });
 
 gulp.task('css', function() {
-	gulp.src(config.paths.css)
+	return gulp.src(config.paths.css)
 		.pipe(concat('bundle.css'))
 		.pipe(gulp.dest(config.paths.dist + '/css'));
 });
@@ -68,8 +69,11 @@ gulp.task('lint', function() {
 });
 
 gulp.task('watch', function() {
-	gulp.watch(config.paths.html, ['html']);
-	gulp.watch(config.paths.js, ['js', 'lint']);
+	gulp.watch(config.paths.html, gulp.series('html'));
+	gulp.watch(config.paths.js, gulp.series('js', 'lint'));
+	return new Promise((resolve, reject) => resolve());
 });
 
-gulp.task('default', ['html', 'js', 'css', 'lint', 'open', 'watch']);
+gulp.task('default', gulp.series('html', 'js', 'css', 'lint', 'open', 'watch', function() {
+	return new Promise((resolve, reject) => resolve());
+}));
